@@ -1,0 +1,15 @@
+{
+    "name": "zrour/crud-mvc",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Zrour Mostfa",
+            "email": "moustazro123@gmail.com"
+        }
+    ],
+    "require": {}
+}
