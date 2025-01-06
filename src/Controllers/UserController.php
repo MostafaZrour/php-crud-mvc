@@ -20,17 +20,34 @@ class UserController extends Controller
         $this->laodView('index', ['users' => $users]);
     }
 
-    function  store()
+    public function store()
     {
         $this->laodView('create');
     }
 
-    function create()
+    public function create()
     {
+        $errors = [];
         $data = [
-            'name' => htmlspecialchars($_POST['name']),
-            'email' => htmlspecialchars($_POST['email'])
+            'name' => htmlspecialchars($_POST['name'] ?? ''),
+            'email' => htmlspecialchars($_POST['email'] ?? '')
         ];
+
+        if (empty($data['name'])) {
+            $errors['name'] = 'Name is required.';
+        }
+
+        if (empty($data['email'])) {
+            $errors['email'] = 'Email is required.';
+        } elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors['email'] = 'Invalid email format.';
+        }
+
+        if (!empty($errors)) {
+            $this->laodView('create', ['errors' => $errors, 'data' => $data]);
+            return;
+        }
+
         $this->userModel->create($data);
         header('Location: /');
     }
@@ -46,11 +63,28 @@ class UserController extends Controller
 
     public function update()
     {
-        $id = $_POST['id'];
+        $errors = [];
+        $id = $_POST['id'] ?? null;
         $data = [
-            'name' => $_POST['name'],
-            'email' => $_POST['email']
+            'name' => htmlspecialchars($_POST['name'] ?? ''),
+            'email' => htmlspecialchars($_POST['email'] ?? '')
         ];
+
+        if (empty($data['name'])) {
+            $errors['name'] = 'Name is required.';
+        }
+
+        if (empty($data['email'])) {
+            $errors['email'] = 'Email is required.';
+        } elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors['email'] = 'Invalid email format.';
+        }
+
+        if (!empty($errors)) {
+            $user = $this->userModel->find($id);
+            $this->laodView('update', ['errors' => $errors, 'data' => $data, 'user' => $user]);
+            return;
+        }
 
         $this->userModel->update($id, $data);
         header('Location: /');
