@@ -28,6 +28,13 @@ class User extends Database
         $stm->execute([$id]);
         return $stm->fetch(\PDO::FETCH_ASSOC);
     }
+
+    public function findByEmail($email)
+    {
+        $stm = $this->db->prepare("select * from users where email = ?");
+        $stm->execute([$email]);
+        return $stm->fetch(\PDO::FETCH_ASSOC);
+    }
     public function update($id, $data)
     {
         $stm = $this->db->prepare("update users set name = ?, email = ? where id = ?");

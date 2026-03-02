@@ -14,88 +14,69 @@ class UserController extends Controller
         $this->userModel = new User();
     }
 
-    public function index()
+    public function login()
     {
-        $users = $this->userModel->all();
-        $this->laodView('index', ['users' => $users]);
+        if (isset($_SESSION['user_id'])) {
+            header('Location: ?action=dashboard');
+            return;
+        }
+        $this->laodView('auth/login', ['data' => [], 'errors' => []]);
     }
 
-    public function store()
-    {
-        $this->laodView('create');
-    }
-
-    public function create()
+    public function verify()
     {
         $errors = [];
+        $email = trim($_POST['email'] ?? '');
+        $password = trim($_POST['password'] ?? '');
+        
         $data = [
-            'name' => htmlspecialchars($_POST['name'] ?? ''),
-            'email' => htmlspecialchars($_POST['email'] ?? '')
+            'email' => $email,
+            'password' => $password
         ];
 
-        if (empty($data['name'])) {
-            $errors['name'] = 'Name is required.';
+        if (empty($email)) {
+            $errors['email'] = 'Email is required.';
         }
 
-        if (empty($data['email'])) {
-            $errors['email'] = 'Email is required.';
-        } elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            $errors['email'] = 'Invalid email format.';
+        if (empty($password)) {
+            $errors['password'] = 'Password is required.';
         }
 
         if (!empty($errors)) {
-            $this->laodView('create', ['errors' => $errors, 'data' => $data]);
+            $this->laodView('auth/login', ['errors' => $errors, 'data' => $data]);
             return;
         }
 
-        $this->userModel->create($data);
-        header('Location: /');
-    }
-
-    public function show()
-    {
-        $id = $_GET['id'] ?? null;
-        if ($id) {
-            $user = $this->userModel->find($id);
-            $this->laodView('update', ['user' => $user]);
-        }
-    }
-
-    public function update()
-    {
-        $errors = [];
-        $id = $_POST['id'] ?? null;
-        $data = [
-            'name' => htmlspecialchars($_POST['name'] ?? ''),
-            'email' => htmlspecialchars($_POST['email'] ?? '')
-        ];
-
-        if (empty($data['name'])) {
-            $errors['name'] = 'Name is required.';
-        }
-
-        if (empty($data['email'])) {
-            $errors['email'] = 'Email is required.';
-        } elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            $errors['email'] = 'Invalid email format.';
-        }
-
-        if (!empty($errors)) {
-            $user = $this->userModel->find($id);
-            $this->laodView('update', ['errors' => $errors, 'data' => $data, 'user' => $user]);
+        // Check if user exists
+        $user = $this->userModel->findByEmail($email);
+        
+        if (!$user || $user['password'] !== $password) {
+            $errors['login'] = 'Invalid email or password.';
+            $this->laodView('auth/login', ['errors' => $errors, 'data' => $data]);
             return;
         }
 
-        $this->userModel->update($id, $data);
-        header('Location: /');
+        // Start session and set user
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['user_email'] = $user['email'];
+        $_SESSION['user_name'] = $user['name'];
+        
+        header('Location: ?action=dashboard');
     }
 
-    public function delete()
+    public function dashboard()
     {
-        $id = $_GET['id'] ?? null;
-        if ($id) {
-            $this->userModel->delete($id);
-            header('Location: /');
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ?action=login');
+            return;
         }
+        
+        $this->laodView('auth/dashboard', ['user' => $_SESSION]);
+    }
+
+    public function logout()
+    {
+        session_destroy();
+        header('Location: ?action=login');
     }
 }
